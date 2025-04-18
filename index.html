@@ -12,11 +12,11 @@
         #status { margin-top: 10px; white-space: pre-wrap; }
         .settings { margin: 10px 0; }
         .settings label { display: block; margin-bottom: 5px; }
-        .settings input { width: 200px; margin-bottom: 10px; }
+        .settings input, .settings select { width: 200px; margin-bottom: 10px; }
     </style>
 </head>
 <body onload="updateLanguage()">
-    <h1>WoofSwap Trading Tool</h1>
+    <h1>Dont buy Trading Tool</h1>
     <div class="settings">
         <label>Shibarium RPC URL: <input type="text" id="rpcUrl" value="https://www.shibrpc.com"></label>
         <label>Chain ID: <input type="text" id="chainId" value="109" readonly></label>
@@ -28,10 +28,13 @@
     <p>Enter one private key per line (with "0x" prefix):</p>
     <textarea id="privateKeys" placeholder="e.g.\n0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"></textarea>
     <div class="settings">
-        <label>Target Token Address: <input type="text" id="tokenAddress" placeholder="e.g. 0x63A67329f761517570345eE86f791F74f9DC5461"></label>
+        <label>Target Token: <select id="tokenAddress">
+            <option value="0xc71455AB0a630918250cAB1E692D2024F51bC061">DONT (Dont buy)</option>
+        </select></label>
         <label>Gas Price (Gwei): <input type="number" id="gasPrice" value="3.2" step="0.1" min="0"></label>
         <label>Gas Limit: <input type="number" id="gasLimit" value="400000" min="21000"></label>
         <label>Process Interval (seconds): <input type="number" id="processInterval" value="5" min="1"></label>
+        <label>Trade Cycles: <input type="number" id="tradeCycles" value="10" min="1"></label>
     </div>
     <button onclick="startTrading()">Start Trading</button>
     <button onclick="checkBalances()">Check Balances</button>
@@ -60,10 +63,11 @@
                 labelLanguage: "Language: ",
                 labelPrivateKeys: "Enter one private key per line (with \"0x\" prefix):",
                 privateKeysPlaceholder: "e.g.\n0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-                labelTokenAddress: "Target Token Address: ",
+                labelTokenAddress: "Target Token: ",
                 labelGasPrice: "Gas Price (Gwei): ",
                 labelGasLimit: "Gas Limit: ",
                 labelProcessInterval: "Process Interval (seconds): ",
+                labelTradeCycles: "Trade Cycles: ",
                 startButton: "Start Trading",
                 checkBalanceButton: "Check Balances",
                 statusReady: "Status: Ready",
@@ -77,6 +81,7 @@
                 invalidGasPrice: "Error: Invalid Gas Price.",
                 invalidGasLimit: "Error: Invalid Gas Limit (minimum 21000).",
                 invalidInterval: "Error: Invalid Process Interval (minimum 1 second).",
+                invalidTradeCycles: "Error: Invalid Trade Cycles (minimum 1).",
                 processingWallet: "Processing wallet ",
                 boneBalance: "BONE Balance: ",
                 tokenBalance: "Token Balance: ",
@@ -97,10 +102,11 @@
                 labelLanguage: "语言: ",
                 labelPrivateKeys: "每行输入一个私钥 (带 \"0x\" 前缀):",
                 privateKeysPlaceholder: "例如:\n0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-                labelTokenAddress: "目标代币地址: ",
+                labelTokenAddress: "目标代币: ",
                 labelGasPrice: "Gas 价格 (Gwei): ",
                 labelGasLimit: "Gas 限制: ",
                 labelProcessInterval: "处理间隔 (秒): ",
+                labelTradeCycles: "交易循环次数: ",
                 startButton: "开始交易",
                 checkBalanceButton: "检查余额",
                 statusReady: "状态: 准备就绪",
@@ -114,6 +120,7 @@
                 invalidGasPrice: "错误: 无效的 Gas 价格。",
                 invalidGasLimit: "错误: 无效的 Gas 限制 (最小 21000)。",
                 invalidInterval: "错误: 无效的处理间隔 (最小 1 秒)。",
+                invalidTradeCycles: "错误: 无效的交易循环次数 (最小 1)。",
                 processingWallet: "正在处理钱包 ",
                 boneBalance: "BONE 余额: ",
                 tokenBalance: "代币余额: ",
@@ -144,6 +151,7 @@
             document.getElementById("labelGasPrice").childNodes[0].textContent = getMessage("labelGasPrice");
             document.getElementById("labelGasLimit").childNodes[0].textContent = getMessage("labelGasLimit");
             document.getElementById("labelProcessInterval").childNodes[0].textContent = getMessage("labelProcessInterval");
+            document.getElementById("labelTradeCycles").childNodes[0].textContent = getMessage("labelTradeCycles");
             document.getElementById("startButton").textContent = getMessage("startButton");
             document.getElementById("checkBalanceButton").textContent = getMessage("checkBalanceButton");
             document.getElementById("status").textContent = getMessage("statusReady");
@@ -181,16 +189,15 @@
             }
         }
 
-        async function tradeCycle(web3, account, tokenAddress, gasPrice, gasLimit, processInterval) {
+        async function tradeCycle(web3, account, tokenAddress, gasPrice, gasLimit, processInterval, tradeCycles) {
             const status = document.getElementById("status");
             const routerContract = new web3.eth.Contract(WOOF_ROUTER_ABI, WOOF_ROUTER_ADDRESS);
             const tokenContract = new web3.eth.Contract(ERC20_ABI, tokenAddress);
-            const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
             const reserveBone = web3.utils.toWei("0.1", "ether");
             const reserveToken = web3.utils.toWei("0.000001", "ether");
 
-            while (true) {
-                status.textContent += getMessage("processingWallet") + account.address + "\n";
+            for (let cycle = 1; cycle <= tradeCycles; cycle++) {
+                status.textContent += getMessage("processingWallet") + account.address + ` (Cycle ${cycle}/${tradeCycles})\n`;
                 let balance = await web3.eth.getBalance(account.address);
                 let boneToSpend = web3.utils.toBN(balance).sub(web3.utils.toBN(reserveBone));
                 if (boneToSpend.lte(web3.utils.toBN(0))) {
@@ -200,6 +207,7 @@
 
                 status.textContent += getMessage("buyingToken") + account.address + "...\n";
                 try {
+                    const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
                     const buyTx = await routerContract.methods.swapExactETHForTokens(
                         0,
                         [{ from: WBONE_ADDRESS, to: tokenAddress, stable: false }],
@@ -228,6 +236,7 @@
 
                 status.textContent += getMessage("sellingToken") + account.address + "...\n";
                 try {
+                    const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
                     const sellTx = await routerContract.methods.swapExactTokensForETH(
                         tokenToSell,
                         0,
@@ -256,10 +265,11 @@
             if (!web3) return;
 
             const privateKeys = document.getElementById("privateKeys").value.trim().split("\n").filter(key => key.length > 0);
-            const tokenAddress = document.getElementById("tokenAddress").value.trim();
+            const tokenAddress = document.getElementById("tokenAddress").value;
             const gasPrice = web3.utils.toWei(document.getElementById("gasPrice").value, "gwei");
             const gasLimit = parseInt(document.getElementById("gasLimit").value);
             const processInterval = parseInt(document.getElementById("processInterval").value) * 1000;
+            const tradeCycles = parseInt(document.getElementById("tradeCycles").value);
 
             if (privateKeys.length < 1) {
                 status.textContent += getMessage("noPrivateKeys") + "\n";
@@ -281,13 +291,17 @@
                 status.textContent += getMessage("invalidInterval") + "\n";
                 return;
             }
+            if (isNaN(tradeCycles) || tradeCycles < 1) {
+                status.textContent += getMessage("invalidTradeCycles") + "\n";
+                return;
+            }
 
             for (const pk of privateKeys) {
                 const account = web3.eth.accounts.privateKeyToAccount(pk.trim());
                 web3.eth.accounts.wallet.add(account);
                 status.textContent += getMessage("approvingToken") + account.address + "...\n";
                 if (await approveToken(web3, account, tokenAddress)) {
-                    await tradeCycle(web3, account, tokenAddress, gasPrice, gasLimit, processInterval);
+                    await tradeCycle(web3, account, tokenAddress, gasPrice, gasLimit, processInterval, tradeCycles);
                 } else {
                     status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + "Token approval failed\n";
                 }
@@ -301,7 +315,7 @@
             const web3 = await initializeWeb3();
             if (!web3) return;
 
-            const tokenAddress = document.getElementById("tokenAddress").value.trim();
+            const tokenAddress = document.getElementById("tokenAddress").value;
             const privateKeys = document.getElementById("privateKeys").value.trim().split("\n").filter(key => key.length > 0);
 
             if (privateKeys.length < 1) {
@@ -320,7 +334,7 @@
                 const tokenBalance = await tokenContract.methods.balanceOf(account.address).call();
                 status.textContent += getMessage("processingWallet") + account.address + "\n";
                 status.textContent += getMessage("boneBalance") + web3.utils.fromWei(boneBalance, "ether") + " BONE\n";
-                status.textContent += getMessage("tokenBalance") + web3.utils.fromWei(tokenBalance, "ether") + " Token\n";
+                status.textContent += getMessage("tokenBalance") + web3.utils.fromWei(tokenBalance, "ether") + " DONT\n";
             }
             status.textContent += getMessage("allProcessed") + "\n";
         }
