@@ -15,15 +15,11 @@
         .settings input, .settings select { width: 200px; margin-bottom: 10px; }
     </style>
 </head>
-<body onload="updateLanguage()">
+<body>
     <h1>Dont buy Trading Tool</h1>
     <div class="settings">
         <label>Shibarium RPC URL: <input type="text" id="rpcUrl" value="https://www.shibrpc.com"></label>
         <label>Chain ID: <input type="text" id="chainId" value="109" readonly></label>
-        <label>Language: <select id="language" onchange="updateLanguage()">
-            <option value="en">English</option>
-            <option value="zh">中文</option>
-        </select></label>
     </div>
     <p>Enter one private key per line (with "0x" prefix):</p>
     <textarea id="privateKeys" placeholder="e.g.\n0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"></textarea>
@@ -52,109 +48,52 @@
 
         const ERC20_ABI = [
             {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+            {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
         ];
 
         const messages = {
-            en: {
-                title: "WoofSwap Trading Tool",
-                labelRpcUrl: "Shibarium RPC URL: ",
-                labelChainId: "Chain ID: ",
-                labelLanguage: "Language: ",
-                labelPrivateKeys: "Enter one private key per line (with \"0x\" prefix):",
-                privateKeysPlaceholder: "e.g.\n0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-                labelTokenAddress: "Target Token: ",
-                labelGasPrice: "Gas Price (Gwei): ",
-                labelGasLimit: "Gas Limit: ",
-                labelProcessInterval: "Process Interval (seconds): ",
-                labelTradeCycles: "Trade Cycles: ",
-                startButton: "Start Trading",
-                checkBalanceButton: "Check Balances",
-                statusReady: "Status: Ready",
-                testingRPC: "Testing RPC connection...",
-                connectedToChain: "Connected to chain ID: ",
-                expectedChain: " (Shibarium should be 109)",
-                chainMismatch: "Error: Not connected to Shibarium network (chain ID should be 109).",
-                rpcError: "Error: Failed to connect to RPC: ",
-                noPrivateKeys: "Error: No private keys provided.",
-                invalidTokenAddress: "Error: Invalid token address.",
-                invalidGasPrice: "Error: Invalid Gas Price.",
-                invalidGasLimit: "Error: Invalid Gas Limit (minimum 21000).",
-                invalidInterval: "Error: Invalid Process Interval (minimum 1 second).",
-                invalidTradeCycles: "Error: Invalid Trade Cycles (minimum 1).",
-                processingWallet: "Processing wallet ",
-                boneBalance: "BONE Balance: ",
-                tokenBalance: "Token Balance: ",
-                approvingToken: "Approving token for ",
-                buyingToken: "Buying token for ",
-                sellingToken: "Selling token for ",
-                lowBalanceWarning: "Warning: Wallet has low BONE balance: ",
-                tradeSuccess: "Trade successful! Tx: ",
-                errorProcessing: "Error processing ",
-                errorMessage: ": ",
-                allProcessed: "All wallets processed.",
-                generalError: "Error: "
-            },
-            zh: {
-                title: "WoofSwap 交易工具",
-                labelRpcUrl: "Shibarium RPC 地址: ",
-                labelChainId: "链 ID: ",
-                labelLanguage: "语言: ",
-                labelPrivateKeys: "每行输入一个私钥 (带 \"0x\" 前缀):",
-                privateKeysPlaceholder: "例如:\n0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-                labelTokenAddress: "目标代币: ",
-                labelGasPrice: "Gas 价格 (Gwei): ",
-                labelGasLimit: "Gas 限制: ",
-                labelProcessInterval: "处理间隔 (秒): ",
-                labelTradeCycles: "交易循环次数: ",
-                startButton: "开始交易",
-                checkBalanceButton: "检查余额",
-                statusReady: "状态: 准备就绪",
-                testingRPC: "测试 RPC 连接...",
-                connectedToChain: "已连接到链 ID: ",
-                expectedChain: " (Shibarium 应为 109)",
-                chainMismatch: "错误: 未连接到 Shibarium 网络 (链 ID 应为 109)。",
-                rpcError: "错误: 无法连接到 RPC: ",
-                noPrivateKeys: "错误: 未提供私钥。",
-                invalidTokenAddress: "错误: 无效的代币地址。",
-                invalidGasPrice: "错误: 无效的 Gas 价格。",
-                invalidGasLimit: "错误: 无效的 Gas 限制 (最小 21000)。",
-                invalidInterval: "错误: 无效的处理间隔 (最小 1 秒)。",
-                invalidTradeCycles: "错误: 无效的交易循环次数 (最小 1)。",
-                processingWallet: "正在处理钱包 ",
-                boneBalance: "BONE 余额: ",
-                tokenBalance: "代币余额: ",
-                approvingToken: "为以下地址授权代币 ",
-                buyingToken: "为以下地址购买代币 ",
-                sellingToken: "为以下地址出售代币 ",
-                lowBalanceWarning: "警告: 钱包 BONE 余额低: ",
-                tradeSuccess: "交易成功! 交易哈希: ",
-                errorProcessing: "处理时出错 ",
-                errorMessage: ": ",
-                allProcessed: "所有钱包处理完成。",
-                generalError: "错误: "
-            }
+            title: "WoofSwap Trading Tool",
+            labelRpcUrl: "Shibarium RPC URL: ",
+            labelChainId: "Chain ID: ",
+            labelPrivateKeys: "Enter one private key per line (with \"0x\" prefix):",
+            privateKeysPlaceholder: "e.g.\n0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+            labelTokenAddress: "Target Token: ",
+            labelGasPrice: "Gas Price (Gwei): ",
+            labelGasLimit: "Gas Limit: ",
+            labelProcessInterval: "Process Interval (seconds): ",
+            labelTradeCycles: "Trade Cycles: ",
+            startButton: "Start Trading",
+            checkBalanceButton: "Check Balances",
+            statusReady: "Status: Ready",
+            testingRPC: "Testing RPC connection...",
+            connectedToChain: "Connected to chain ID: ",
+            expectedChain: " (Shibarium should be 109)",
+            chainMismatch: "Error: Not connected to Shibarium network (chain ID should be 109).",
+            rpcError: "Error: Failed to connect to RPC: ",
+            noPrivateKeys: "Error: No private keys provided.",
+            invalidTokenAddress: "Error: Invalid token address.",
+            invalidGasPrice: "Error: Invalid Gas Price.",
+            invalidGasLimit: "Error: Invalid Gas Limit (minimum 21000).",
+            invalidInterval: "Error: Invalid Process Interval (minimum 1 second).",
+            invalidTradeCycles: "Error: Invalid Trade Cycles (minimum 1).",
+            processingWallet: "Processing wallet ",
+            boneBalance: "BONE Balance: ",
+            tokenBalance: "DONT Balance: ",
+            approvingToken: "Approving DONT for ",
+            alreadyApproved: "DONT already approved for ",
+            buyingToken: "Buying DONT for ",
+            sellingToken: "Selling DONT for ",
+            lowBalanceWarning: "Warning: Wallet has low BONE balance: ",
+            tradeSuccess: "Trade successful! Tx: ",
+            errorProcessing: "Error processing ",
+            errorMessage: ": ",
+            allProcessed: "All wallets processed.",
+            generalError: "Error: "
         };
 
         function getMessage(key) {
-            return messages[document.getElementById("language").value][key] || key;
-        }
-
-        function updateLanguage() {
-            document.getElementById("title").textContent = getMessage("title");
-            document.getElementById("labelRpcUrl").childNodes[0].textContent = getMessage("labelRpcUrl");
-            document.getElementById("labelChainId").childNodes[0].textContent = getMessage("labelChainId");
-            document.getElementById("labelLanguage").childNodes[0].textContent = getMessage("labelLanguage");
-            document.getElementById("labelPrivateKeys").textContent = getMessage("labelPrivateKeys");
-            document.getElementById("privateKeys").placeholder = getMessage("privateKeysPlaceholder");
-            document.getElementById("labelTokenAddress").childNodes[0].textContent = getMessage("labelTokenAddress");
-            document.getElementById("labelGasPrice").childNodes[0].textContent = getMessage("labelGasPrice");
-            document.getElementById("labelGasLimit").childNodes[0].textContent = getMessage("labelGasLimit");
-            document.getElementById("labelProcessInterval").childNodes[0].textContent = getMessage("labelProcessInterval");
-            document.getElementById("labelTradeCycles").childNodes[0].textContent = getMessage("labelTradeCycles");
-            document.getElementById("startButton").textContent = getMessage("startButton");
-            document.getElementById("checkBalanceButton").textContent = getMessage("checkBalanceButton");
-            document.getElementById("status").textContent = getMessage("statusReady");
+            return messages[key] || key;
         }
 
         async function initializeWeb3() {
@@ -176,11 +115,20 @@
             }
         }
 
-        async function approveToken(web3, account, tokenAddress) {
+        async function checkAndApproveToken(web3, account, tokenAddress) {
             const tokenContract = new web3.eth.Contract(ERC20_ABI, tokenAddress);
             const gasPrice = web3.utils.toWei(document.getElementById("gasPrice").value, "gwei");
             const gasLimit = parseInt(document.getElementById("gasLimit").value);
+            const status = document.getElementById("status");
+
             try {
+                const allowance = await tokenContract.methods.allowance(account.address, WOOF_ROUTER_ADDRESS).call();
+                if (web3.utils.toBN(allowance).gte(web3.utils.toBN(2).pow(web3.utils.toBN(256)).div(web3.utils.toBN(2)))) {
+                    status.textContent += getMessage("alreadyApproved") + account.address + "\n";
+                    return true;
+                }
+
+                status.textContent += getMessage("approvingToken") + account.address + "...\n";
                 await tokenContract.methods.approve(WOOF_ROUTER_ADDRESS, web3.utils.toBN(2).pow(web3.utils.toBN(256)).sub(web3.utils.toBN(1)))
                     .send({ from: account.address, gas: gasLimit, gasPrice });
                 return true;
@@ -299,8 +247,7 @@
             for (const pk of privateKeys) {
                 const account = web3.eth.accounts.privateKeyToAccount(pk.trim());
                 web3.eth.accounts.wallet.add(account);
-                status.textContent += getMessage("approvingToken") + account.address + "...\n";
-                if (await approveToken(web3, account, tokenAddress)) {
+                if (await checkAndApproveToken(web3, account, tokenAddress)) {
                     await tradeCycle(web3, account, tokenAddress, gasPrice, gasLimit, processInterval, tradeCycles);
                 } else {
                     status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + "Token approval failed\n";
