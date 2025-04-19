@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WoofSwap Trading Tool v2</title>
+    <title>WoofSwap Trading Tool</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         textarea { width: 100%; height: 200px; margin-bottom: 10px; }
@@ -16,7 +16,7 @@
     </style>
 </head>
 <body>
-    <h1>WoofSwap Trading Tool v2</h1>
+    <h1>WoofSwap Trading Tool</h1>
     <div class="settings">
         <label>Shibarium RPC URL: <input type="text" id="rpcUrl" value="https://www.shibrpc.com"></label>
         <label>Chain ID: <input type="text" id="chainId" value="109" readonly></label>
@@ -63,43 +63,43 @@
         ];
 
         const messages = {
-            title: "WoofSwap Trading Tool / WoofSwap 交易工具",
-            labelRpcUrl: "Shibarium RPC URL / Shibarium RPC 地址: ",
-            labelChainId: "Chain ID / 链 ID: ",
-            labelPrivateKeys: "Enter one private key per line (with \"0x\" prefix) / 每行输入一个私钥（需带 \"0x\" 前缀）: ",
+            title: "WoofSwap Trading Tool",
+            labelRpcUrl: "Shibarium RPC URL: ",
+            labelChainId: "Chain ID: ",
+            labelPrivateKeys: "Enter one private key per line (with \"0x\" prefix): ",
             privateKeysPlaceholder: "e.g.\n0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-            labelTokenAddress: "Target Token / 目标代币: ",
-            labelGasPrice: "Gas Price (Gwei) / 燃气价格 (Gwei): ",
-            labelGasLimit: "Gas Limit / 燃气限制: ",
-            labelProcessInterval: "Process Interval (seconds) / 处理间隔 (秒): ",
-            labelTradeCycles: "Trade Cycles / 交易循环次数: ",
-            startButton: "Start Trading / 开始交易",
-            checkBalanceButton: "Check Balances / 查询余额",
-            statusReady: "Status: Ready / 状态: 就绪",
-            testingRPC: "Testing RPC connection... / 测试 RPC 连接...",
-            connectedToChain: "Connected to chain ID / 已连接链 ID: ",
-            expectedChain: " (Shibarium should be 109 / Shibarium 应为 109)",
-            chainMismatch: "Error: Not connected to Shibarium (chain ID should be 109) / 错误: 未连接到 Shibarium 网络 (链 ID 应为 109)",
-            rpcError: "Error: Failed to connect to RPC / 错误: 无法连接到 RPC: ",
-            noPrivateKeys: "Error: No private keys provided / 错误: 未提供私钥",
-            invalidTokenAddress: "Error: Invalid token address / 错误: 无效代币地址",
-            invalidGasPrice: "Error: Invalid gas price / 错误: 无效燃气价格",
-            invalidGasLimit: "Error: Invalid gas limit (min 21000) / 错误: 无效燃气限制 (最低 21000)",
-            invalidInterval: "Error: Invalid process interval (min 1s) / 错误: 无效处理间隔 (最低 1 秒)",
-            invalidTradeCycles: "Error: Invalid trade cycles (min 1) / 错误: 无效交易循环次数 (最低 1)",
-            processingWallet: "Processing wallet / 处理钱包 ",
-            boneBalance: "BONE Balance / BONE 余额: ",
-            tokenBalance: "Token Balance / 代币余额: ",
-            approvingToken: "Approving token for / 授权代币 ",
-            alreadyApproved: "Token already approved for / 代币已授权 ",
-            buyingToken: "Buying token for / 买入代币 ",
-            sellingToken: "Selling token for / 卖出代币 ",
-            lowBalanceWarning: "Warning: Low BONE balance / 警告: BONE 余额不足: ",
-            tradeSuccess: "Trade successful! Tx / 交易成功！交易哈希: ",
-            errorProcessing: "Error processing / 处理错误 ",
-            errorMessage: ": / : ",
-            allProcessed: "All wallets processed / 所有钱包处理完成",
-            generalError: "Error / 错误: "
+            labelTokenAddress: "Target Token: ",
+            labelGasPrice: "Gas Price (Gwei): ",
+            labelGasLimit: "Gas Limit: ",
+            labelProcessInterval: "Process Interval (seconds): ",
+            labelTradeCycles: "Trade Cycles: ",
+            startButton: "Start Trading",
+            checkBalanceButton: "Check Balances",
+            statusReady: "Status: Ready",
+            testingRPC: "Testing RPC connection...",
+            connectedToChain: "Connected to chain ID: ",
+            expectedChain: " (Shibarium should be 109)",
+            chainMismatch: "Error: Not connected to Shibarium (chain ID should be 109)",
+            rpcError: "Error: Failed to connect to RPC: ",
+            noPrivateKeys: "Error: No private keys provided",
+            invalidTokenAddress: "Error: Invalid token address",
+            invalidGasPrice: "Error: Invalid gas price",
+            invalidGasLimit: "Error: Invalid gas limit (min 21000)",
+            invalidInterval: "Error: Invalid process interval (min 1s)",
+            invalidTradeCycles: "Error: Invalid trade cycles (min 1)",
+            processingWallet: "Processing wallet ",
+            boneBalance: "BONE Balance: ",
+            tokenBalance: "Token Balance: ",
+            approvingToken: "Approving token for ",
+            alreadyApproved: "Token already approved for ",
+            buyingToken: "Buying token for ",
+            sellingToken: "Selling token for ",
+            lowBalanceWarning: "Warning: Low BONE balance: ",
+            tradeSuccess: "Trade successful! Tx: ",
+            errorProcessing: "Error processing ",
+            errorMessage: ": ",
+            allProcessed: "All wallets processed",
+            generalError: "Error: "
         };
 
         function getMessage(key) {
