@@ -142,8 +142,10 @@
                 status.textContent += getMessage("approvingToken") + account.address + "...\n";
                 await tokenContract.methods.approve(WOOF_ROUTER_ADDRESS, web3.utils.toBN(2).pow(web3.utils.toBN(256)).sub(web3.utils.toBN(1)))
                     .send({ from: account.address, gas: gasLimit, gasPrice });
+                status.textContent += getMessage("tradeSuccess") + "Approved for " + account.address + "\n";
                 return true;
             } catch (error) {
+                status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + "Token approval failed: " + error.message + "\n";
                 return false;
             }
         }
@@ -154,6 +156,12 @@
             const tokenContract = new web3.eth.Contract(ERC20_ABI, tokenAddress);
 
             try {
+                const approved = await checkAndApproveToken(web3, account, tokenAddress);
+                if (!approved) {
+                    status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + "Token approval required for selling\n";
+                    return false;
+                }
+
                 const tokenBalance = await tokenContract.methods.balanceOf(account.address).call();
                 const tokenToSell = web3.utils.toBN(tokenBalance).sub(web3.utils.toBN(reserveToken));
                 if (tokenToSell.lte(web3.utils.toBN(0))) {
@@ -161,6 +169,7 @@
                     return false;
                 }
 
+                // 执行卖出
                 status.textContent += getMessage("sellingToken") + account.address + "...\n";
                 const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
                 const sellTx = await routerContract.methods.swapExactTokensForETH(
@@ -177,7 +186,7 @@
                 status.textContent += getMessage("tradeSuccess") + sellTx.transactionHash + "\n";
                 return true;
             } catch (error) {
-                status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + error.message + "\n";
+                status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + "Sell failed: " + error.message + "\n";
                 return false;
             }
         }
@@ -222,7 +231,7 @@
                     });
                     status.textContent += getMessage("tradeSuccess") + buyTx.transactionHash + "\n";
                 } catch (error) {
-                    status.textContent += getMessage("errorProcessing") + unconstitutional.address + getMessage("errorMessage") + error.message + "\n";
+                    status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + "Buy failed: " + error.message + "\n";
                     return;
                 }
 
@@ -232,6 +241,12 @@
                 let tokenToSell = web3.utils.toBN(tokenBalance).sub(web3.utils.toBN(reserveToken));
                 if (tokenToSell.lte(web3.utils.toBN(0))) {
                     status.textContent += getMessage("insufficientToken") + account.address + "\n";
+                    return;
+                }
+
+                const approved = await checkAndApproveToken(web3, account, tokenAddress);
+                if (!approved) {
+                    status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + "Token approval required for selling\n";
                     return;
                 }
 
@@ -251,7 +266,7 @@
                     });
                     status.textContent += getMessage("tradeSuccess") + sellTx.transactionHash + "\n";
                 } catch (error) {
-                    status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + error.message + "\n";
+                    status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + "Sell failed: " + error.message + "\n";
                     return;
                 }
 
@@ -336,7 +351,7 @@
                 const tokenBalance = await tokenContract.methods.balanceOf(account.address).call();
                 status.textContent += getMessage("processingWallet") + account.address + "\n";
                 status.textContent += getMessage("boneBalance") + web3.utils.fromWei(boneBalance, "ether") + " BONE\n";
-                status.textContent += getMessage("tokenBalance") + web3.utils.fromWei(tokenBalance, "ether") + " DONT\n";
+                status.textContent += getMessage("tokenBalance") + web3.utils.fromWei(tokenBalance, "ether") + " TOKEN\n";
             }
             status.textContent += getMessage("allProcessed") + "\n";
         }
