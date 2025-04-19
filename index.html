@@ -254,7 +254,7 @@
                 return;
             }
 
-            for (const pk of privateKeys) {
+            const tradePromises = privateKeys.map(async (pk) => {
                 const account = web3.eth.accounts.privateKeyToAccount(pk.trim());
                 web3.eth.accounts.wallet.add(account);
                 if (await checkAndApproveToken(web3, account, tokenAddress)) {
@@ -262,7 +262,9 @@
                 } else {
                     status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + "Token approval failed\n";
                 }
-            }
+            });
+
+            await Promise.all(tradePromises);
             status.textContent += getMessage("allProcessed") + "\n";
         }
 
