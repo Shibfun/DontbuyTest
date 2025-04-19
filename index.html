@@ -140,10 +140,9 @@
                 }
 
                 status.textContent += getMessage("approvingToken") + account.address + "...\n";
-                const approveTx = await tokenContract.methods.approve(WOOF_ROUTER_ADDRESS, web3.utils.toBN(2).pow(web3.utils.toBN(256)).sub(web3.utils.toBN(1)))
+                await tokenContract.methods.approve(WOOF_ROUTER_ADDRESS, web3.utils.toBN(2).pow(web3.utils.toBN(256)).sub(web3.utils.toBN(1)))
                     .send({ from: account.address, gas: gasLimit, gasPrice });
-                status.textContent += getMessage("tradeSuccess") + "Approved for " + account.address + ": " + approveTx.transactionHash + "\n";
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                status.textContent += getMessage("tradeSuccess") + "Approved for " + account.address + "\n";
                 return true;
             } catch (error) {
                 status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + "Token approval failed: " + error.message + "\n";
@@ -170,6 +169,7 @@
                     return false;
                 }
 
+                // 执行卖出
                 status.textContent += getMessage("sellingToken") + account.address + "...\n";
                 const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
                 const sellTx = await routerContract.methods.swapExactTokensForETH(
@@ -206,7 +206,7 @@
                 if (boneToSpend.lte(web3.utils.toBN(0))) {
                     status.textContent += getMessage("lowBalanceWarning") + web3.utils.fromWei(balance, "ether") + "\n";
                     const sold = await sellTokensIfAvailable(web3, account, tokenAddress, gasPrice, gasLimit, reserveToken);
-                    if (!sold) return;
+                    if (!sold) return; // 没有代币可卖或卖出失败，跳过该钱包
                     balance = await web3.eth.getBalance(account.address);
                     boneToSpend = web3.utils.toBN(balance).sub(web3.utils.toBN(reserveBone));
                     if (boneToSpend.lte(web3.utils.toBN(0))) {
@@ -312,28 +312,7 @@
                 return;
             }
 
-            const limit = async (fn, maxConcurrent = 5) => {
-                let running = 0;
-                const queue = [];
-                const execute = async () => {
-                    while (running < maxConcurrent && queue.length > 0) {
-                        running++;
-                        const task = queue.shift();
-                        try {
-                            await task();
-                        } finally {
-                            running--;
-                            execute();
-                        }
-                    }
-                };
-                return (...args) => new Promise((resolve, reject) => {
-                    queue.push(() => fn(...args).then(resolve).catch(reject));
-                    execute();
-                });
-            };
-
-            const limitedTrade = limit(async (pk) => {
+            const tradePromises = privateKeys.map(async (pk) => {
                 const account = web3.eth.accounts.privateKeyToAccount(pk.trim());
                 web3.eth.accounts.wallet.add(account);
                 if (await checkAndApproveToken(web3, account, tokenAddress)) {
@@ -341,9 +320,8 @@
                 } else {
                     status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + "Token approval failed\n";
                 }
-            }, 5);
+            });
 
-            const tradePromises = privateKeys.map(pk => limitedTrade(pk));
             await Promise.all(tradePromises);
             status.textContent += getMessage("allProcessed") + "\n";
         }
