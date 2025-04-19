@@ -95,6 +95,7 @@
             buyingToken: "Buying token for ",
             sellingToken: "Selling token for ",
             lowBalanceWarning: "Warning: Low BONE balance: ",
+            insufficientToken: "Skipping wallet: Insufficient token balance ",
             tradeSuccess: "Trade successful! Tx: ",
             errorProcessing: "Error processing ",
             errorMessage: ": ",
@@ -147,6 +148,40 @@
             }
         }
 
+        async function sellTokensIfAvailable(web3, account, tokenAddress, gasPrice, gasLimit, reserveToken) {
+            const status = document.getElementById("status");
+            const routerContract = new web3.eth.Contract(WOOF_ROUTER_ABI, WOOF_ROUTER_ADDRESS);
+            const tokenContract = new web3.eth.Contract(ERC20_ABI, tokenAddress);
+
+            try {
+                const tokenBalance = await tokenContract.methods.balanceOf(account.address).call();
+                const tokenToSell = web3.utils.toBN(tokenBalance).sub(web3.utils.toBN(reserveToken));
+                if (tokenToSell.lte(web3.utils.toBN(0))) {
+                    status.textContent += getMessage("insufficientToken") + account.address + "\n";
+                    return false;
+                }
+
+                status.textContent += getMessage("sellingToken") + account.address + "...\n";
+                const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
+                const sellTx = await routerContract.methods.swapExactTokensForETH(
+                    tokenToSell,
+                    0,
+                    [{ from: tokenAddress, to: WBONE_ADDRESS, stable: false }],
+                    account.address,
+                    deadline
+                ).send({
+                    from: account.address,
+                    gas: gasLimit,
+                    gasPrice
+                });
+                status.textContent += getMessage("tradeSuccess") + sellTx.transactionHash + "\n";
+                return true;
+            } catch (error) {
+                status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + error.message + "\n";
+                return false;
+            }
+        }
+
         async function tradeCycle(web3, account, tokenAddress, gasPrice, gasLimit, processInterval, tradeCycles) {
             const status = document.getElementById("status");
             const routerContract = new web3.eth.Contract(WOOF_ROUTER_ABI, WOOF_ROUTER_ADDRESS);
@@ -158,9 +193,17 @@
                 status.textContent += getMessage("processingWallet") + account.address + ` (Cycle ${cycle}/${tradeCycles})\n`;
                 let balance = await web3.eth.getBalance(account.address);
                 let boneToSpend = web3.utils.toBN(balance).sub(web3.utils.toBN(reserveBone));
+
                 if (boneToSpend.lte(web3.utils.toBN(0))) {
                     status.textContent += getMessage("lowBalanceWarning") + web3.utils.fromWei(balance, "ether") + "\n";
-                    return;
+                    const sold = await sellTokensIfAvailable(web3, account, tokenAddress, gasPrice, gasLimit, reserveToken);
+                    if (!sold) return;
+                    balance = await web3.eth.getBalance(account.address);
+                    boneToSpend = web3.utils.toBN(balance).sub(web3.utils.toBN(reserveBone));
+                    if (boneToSpend.lte(web3.utils.toBN(0))) {
+                        status.textContent += getMessage("lowBalanceWarning") + web3.utils.fromWei(balance, "ether") + "\n";
+                        return;
+                    }
                 }
 
                 status.textContent += getMessage("buyingToken") + account.address + "...\n";
@@ -179,7 +222,7 @@
                     });
                     status.textContent += getMessage("tradeSuccess") + buyTx.transactionHash + "\n";
                 } catch (error) {
-                    status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + error.message + "\n";
+                    status.textContent += getMessage("errorProcessing") + unconstitutional.address + getMessage("errorMessage") + error.message + "\n";
                     return;
                 }
 
@@ -188,7 +231,7 @@
                 let tokenBalance = await tokenContract.methods.balanceOf(account.address).call();
                 let tokenToSell = web3.utils.toBN(tokenBalance).sub(web3.utils.toBN(reserveToken));
                 if (tokenToSell.lte(web3.utils.toBN(0))) {
-                    status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + "Insufficient token balance\n";
+                    status.textContent += getMessage("insufficientToken") + account.address + "\n";
                     return;
                 }
 
