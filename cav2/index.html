@@ -25,7 +25,7 @@
     <textarea id="privateKeys" placeholder="e.g.\n0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"></textarea>
     <div class="settings">
         <label>Target Token Address: <input type="text" id="tokenAddress" placeholder="e.g. 0x1234567890abcdef1234567890abcdef12345678"></label>
-        <label>Gas Price Range (Gwei, min-max): <input type="number" id="gasPriceMin" value="2" step="0.1" min="0"> - <input type="number" id="gasPriceMax" value="5" step="0.1" min="0"></label>
+        <label>Gas Price (Gwei): <input type="number" id="gasPrice" value="3.2" step="0.1" min="0"></label>
         <label>Gas Limit: <input type="number" id="gasLimit" value="400000" min="21000"></label>
         <label>Buy Amount Range (% of balance): <input type="number" id="buyAmountMin" value="10" min="1" max="100"> - <input type="number" id="buyAmountMax" value="80" min="1" max="100"></label>
         <label>Buy Interval Range (seconds): <input type="number" id="buyIntervalMin" value="5" min="1"> - <input type="number" id="buyIntervalMax" value="30" min="1"></label>
@@ -60,7 +60,7 @@
             labelPrivateKeys: "Enter one private key per line (with \"0x\" prefix): ",
             privateKeysPlaceholder: "e.g.\n0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
             labelTokenAddress: "Target Token Address: ",
-            labelGasPrice: "Gas Price Range (Gwei, min-max): ",
+            labelGasPrice: "Gas Price (Gwei): ",
             labelGasLimit: "Gas Limit: ",
             labelBuyAmount: "Buy Amount Range (% of balance): ",
             labelBuyInterval: "Buy Interval Range (seconds): ",
@@ -77,7 +77,7 @@
             rpcError: "Error: Failed to connect to RPC: ",
             noPrivateKeys: "Error: No private keys provided",
             invalidTokenAddress: "Error: Invalid token address",
-            invalidGasPrice: "Error: Invalid gas price range",
+            invalidGasPrice: "Error: Invalid gas price",
             invalidGasLimit: "Error: Invalid gas limit (min 21000)",
             invalidBuyAmount: "Error: Invalid buy amount range (1-100%)",
             invalidBuyInterval: "Error: Invalid buy interval range (min 1s)",
@@ -130,10 +130,8 @@
             }
         }
 
-        async function checkAndApproveToken(web3, account, tokenAddress) {
+        async function checkAndApproveToken(web3, account, tokenAddress, gasPrice, gasLimit) {
             const tokenContract = new web3.eth.Contract(ERC20_ABI, tokenAddress);
-            const gasPrice = web3.utils.toWei(getRandomFloat(parseFloat(document.getElementById("gasPriceMin").value), parseFloat(document.getElementById("gasPriceMax").value)).toFixed(1), "gwei");
-            const gasLimit = parseInt(document.getElementById("gasLimit").value);
             const status = document.getElementById("status");
 
             try {
@@ -154,7 +152,7 @@
             }
         }
 
-        async function tradeCycle(web3, account, tokenAddress, gasLimit, tradeCycles) {
+        async function tradeCycle(web3, account, tokenAddress, gasPrice, gasLimit, tradeCycles) {
             const status = document.getElementById("status");
             const routerContract = new web3.eth.Contract(WOOF_ROUTER_ABI, WOOF_ROUTER_ADDRESS);
             const tokenContract = new web3.eth.Contract(ERC20_ABI, tokenAddress);
@@ -181,7 +179,6 @@
                     return;
                 }
 
-                const gasPrice = web3.utils.toWei(getRandomFloat(parseFloat(document.getElementById("gasPriceMin").value), parseFloat(document.getElementById("gasPriceMax").value)).toFixed(1), "gwei");
                 status.textContent += getMessage("buyingToken") + account.address + "...\n";
                 try {
                     const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
@@ -213,7 +210,7 @@
                     return;
                 }
 
-                const approved = await checkAndApproveToken(web3, account, tokenAddress);
+                const approved = await checkAndApproveToken(web3, account, tokenAddress, gasPrice, gasLimit);
                 if (!approved) {
                     status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + "Token approval required for selling\n";
                     return;
@@ -252,10 +249,9 @@
 
             const privateKeys = document.getElementById("privateKeys").value.trim().split("\n").filter(key => key.length > 0);
             const tokenAddress = document.getElementById("tokenAddress").value.trim();
+            const gasPrice = web3.utils.toWei(document.getElementById("gasPrice").value, "gwei");
             const gasLimit = parseInt(document.getElementById("gasLimit").value);
             const tradeCycles = parseInt(document.getElementById("tradeCycles").value);
-            const gasPriceMin = parseFloat(document.getElementById("gasPriceMin").value);
-            const gasPriceMax = parseFloat(document.getElementById("gasPriceMax").value);
             const buyAmountMin = parseInt(document.getElementById("buyAmountMin").value);
             const buyAmountMax = parseInt(document.getElementById("buyAmountMax").value);
             const buyIntervalMin = parseInt(document.getElementById("buyIntervalMin").value);
@@ -273,7 +269,7 @@
                 status.textContent += getMessage("invalidTokenAddress") + "\n";
                 return;
             }
-            if (isNaN(gasPriceMin) || isNaN(gasPriceMax) || gasPriceMin <= 0 || gasPriceMax < gasPriceMin) {
+            if (isNaN(parseFloat(document.getElementById("gasPrice").value)) || parseFloat(document.getElementById("gasPrice").value) <= 0) {
                 status.textContent += getMessage("invalidGasPrice") + "\n";
                 return;
             }
@@ -305,8 +301,8 @@
             for (const pk of privateKeys) {
                 const account = web3.eth.accounts.privateKeyToAccount(pk.trim());
                 web3.eth.accounts.wallet.add(account);
-                if (await checkAndApproveToken(web3, account, tokenAddress)) {
-                    await tradeCycle(web3, account, tokenAddress, gasLimit, tradeCycles);
+                if (await checkAndApproveToken(web3, account, tokenAddress, gasPrice, gasLimit)) {
+                    await tradeCycle(web3, account, tokenAddress, gasPrice, gasLimit, tradeCycles);
                 } else {
                     status.textContent += getMessage("errorProcessing") + account.address + getMessage("errorMessage") + "Token approval failed\n";
                 }
